@@ -12,7 +12,9 @@ namespace LAB_15
 {
     class Program
     {
-        static AutoResetEvent waitHandler = new AutoResetEvent(true);
+        static AutoResetEvent waitHandler = new AutoResetEvent(true), waitHandler2 = new AutoResetEvent(true);
+        static Thread myThreadEven, myThreadNotEven;
+
         private static void Main()
         {
             WriteColoredLine(("").PadLeft(54, '-') + " First Task " + ("").PadLeft(54, '-'), ConsoleColor.Green);
@@ -29,6 +31,11 @@ namespace LAB_15
                     WriteColoredLine($"{e.Message}: {item.ProcessName}", ConsoleColor.Red);
                 }
             }
+
+            WriteColoredLine(("").PadLeft(54, '-') + " Fifth Task " + ("").PadLeft(54, '-'), ConsoleColor.Green);
+
+            TimerCallback tm = new TimerCallback(timerT);
+            Timer timer = new Timer(tm, 5, 1000, 2000);
 
             WriteColoredLine(("").PadLeft(53, '-') + " Second Task " + ("").PadLeft(54, '-'), ConsoleColor.Green);
 
@@ -64,19 +71,25 @@ namespace LAB_15
             WriteColoredLine(("").PadLeft(54, '-') + " Fourth Task " + ("").PadLeft(53, '-'), ConsoleColor.Green);
 
             StreamWriter st = new StreamWriter("EvenNotEven.txt");
-            Thread myThreadEven = new Thread(new ParameterizedThreadStart(Even));
-            Thread myThreadNotEven = new Thread(new ParameterizedThreadStart(NotEven));
+            myThreadEven = new Thread(new ParameterizedThreadStart(Even));
+            myThreadNotEven = new Thread(new ParameterizedThreadStart(NotEven));
             myThreadEven.Start(st);
-            myThreadNotEven.Priority = ThreadPriority.Highest;
+            myThreadNotEven.Priority = ThreadPriority.Lowest;
             myThreadNotEven.Start(st);
             myThreadNotEven.Join();
-            myThreadEven.Join();
+            Console.WriteLine();
+
+            Thread first = new Thread(new ThreadStart(EvenC));
+            Thread second = new Thread(new ThreadStart(NotEvenC));
+            first.Start();
+            second.Start();
+
 
             
-            
+
             //waitHandler.WaitOne();
             //if (myThreadEven.IsAlive && myThreadNotEven.IsAlive)
-              //  waitHandler.Set();
+            //  waitHandler.Set();
 
             st.Close();
         }
@@ -123,13 +136,13 @@ namespace LAB_15
             }
             Console.WriteLine();
             ((StreamWriter)st).WriteLine();
-            waitHandler.Set();
+            Thread.CurrentThread.Abort();
             
         }
 
         public static void NotEven(object st)
         {
-            waitHandler.WaitOne();
+            myThreadEven.Join();
             var n = 40;
             //Console.WriteLine("Нечетные числа: ");
             //((StreamWriter)st).WriteLine("Нечетные числа: ");
@@ -143,40 +156,44 @@ namespace LAB_15
             }
             Console.WriteLine();
             ((StreamWriter)st).WriteLine();
-            
+            Thread.CurrentThread.Abort();
             
         }
 
-        public static void EvenС()
+        public static void EvenC()
         {
 
             var n = 40;
             for (int i = 0; i < n; i++)
             {
+                waitHandler2.WaitOne();
                 if (i % 2 == 0)
-                {
-                    Console.Write(i + ", "); 
-                }
-                //waitHandler.Set();
+                    Console.Write(i + ", ");
+                waitHandler.Set();
             }
-            Console.WriteLine();
 
         }
 
-        public static void NotEvenС()
+        public static void NotEvenC()
         {
             var n = 40;
             for (int i = 0; i < n; i++)
             {
-                //waitHandler.WaitOne();
+                waitHandler.WaitOne();
                 if (i % 2 != 0)
-                {
                     Console.Write(i + ", ");
-                }
+                waitHandler2.Set();
             }
-            Console.WriteLine();
 
+        }
 
+        public static void timerT(object n)
+        {
+            int x = (int)n;
+            for (int i = 1; i < 9; i++, x++)
+            {
+                Console.WriteLine($"{x * i}");
+            }
         }
     }
 }
